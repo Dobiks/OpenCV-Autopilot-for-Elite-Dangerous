@@ -12,10 +12,20 @@ from scipy import ndimage
 import pydirectinput
 
 mon = {'left': 860, 'top': 960, 'width': 220, 'height': 320}
+mon2 = {'left': 700, 'top': 400, 'width': 1200, 'height': 600}
+
+
+def press_key(key):
+    pydirectinput.keyDown(key)
+    time.sleep(0.1)
+    pydirectinput.keyUp(key)
 
 with mss() as sct:
     counter = 0
+    precise_position_counter = 0
     mass_center=(0,0)
+    on_position = 0
+    precise_position = 0
     while True:
         screenShot = sct.grab(mon)
         img = Image.frombytes(
@@ -23,8 +33,15 @@ with mss() as sct:
             (screenShot.width, screenShot.height), 
             screenShot.rgb, 
         )
-        
         src = np.array(img)
+
+        screenShot = sct.grab(mon2)
+        img = Image.frombytes(
+            'RGB', 
+            (screenShot.width, screenShot.height), 
+            screenShot.rgb, 
+        )
+        screen_center = np.array(img)
 
         ret, thresh1 = cv2.threshold(src, 180, 255, cv2.THRESH_BINARY)
         gray = cv2.cvtColor(thresh1, cv2.COLOR_BGR2GRAY)
@@ -34,6 +51,16 @@ with mss() as sct:
                                     param1=70, param2=20,
                                     minRadius=37, maxRadius=43)
 
+
+        orange_lower=np.array([120,120,0],np.uint8) #bgr 
+        orange_upper=np.array([245,255,12],np.uint8)
+        orange=cv2.inRange(screen_center,orange_lower,orange_upper)
+        try:
+            orange_mass_center = ndimage.measurements.center_of_mass(orange)
+            orange_mass_center = (int(orange_mass_center[1]),int(orange_mass_center[0]))
+            cv2.circle(screen_center, orange_mass_center, 10, (255, 0, 255), 2)
+        except:
+            pass
 
         if circles is not None:
             counter = counter + 1
@@ -59,53 +86,72 @@ with mss() as sct:
                     radar = cv2.resize(radar, (200,200), interpolation = cv2.INTER_AREA)
                 except:
                     pass
-                if counter%10==0: 
-                    #print(mass_center)
-                    if mass_center[0]<35:
-                        pydirectinput.keyDown('b')
-                        time.sleep(0.25)
-                        pydirectinput.keyUp('b')
-                        print("prawo")
-                    if mass_center[0]>45:
-                        pydirectinput.keyDown('k')
-                        time.sleep(0.25)
-                        pydirectinput.keyUp('k')
-                        print("lewo")
-                    if mass_center[1]<35:
-                        pydirectinput.keyDown('i')
-                        time.sleep(0.25)
-                        pydirectinput.keyUp('i')
-                        print("gora")
-                    if mass_center[1]>35:
-                        pydirectinput.keyDown('p')
-                        time.sleep(0.25)
-                        pydirectinput.keyUp('p')
-                        print("dol")
+                if counter%10==0:
+                    if on_position == 0: 
+                        #print(orange_mass_center)
+                        if mass_center[0]<35:
+                            press_key('b')
+                            print("prawo")
+                        if mass_center[0]>45:
+                            press_key('k')
+                            print("lewo")
+                        if mass_center[1]<35:
+                            press_key('i')
+                            print("gora")
+                        if mass_center[1]>35:
+                            press_key('p')
+                            print("dol")
+                        if 45>mass_center[0]>35 and 45>mass_center[1]>35:
+                            #print("Pozycja osiegnieta")
+                            on_position = 1
+                            print("Namierzanie precyzyjne")
+
+        if on_position == 1 and precise_position == 0:
+            precise_position_counter = precise_position_counter + 1
+            if orange_mass_center[0]<634:
+                press_key('a')
+                print("lewo")
+                precise_position_counter = 0
+            if orange_mass_center[0]>704:
+                press_key('d')
+                print("prawo")
+                precise_position_counter = 0
+            if orange_mass_center[1]<274:
+                press_key('i')
+                print("gora")
+                precise_position_counter = 0
+            if orange_mass_center[1]>377:
+                press_key('p')
+                print("dol")
+                precise_position_counter = 0
+            if precise_position_counter == 50:
+                precise_position = 1
+                print("throttle up")
+                press_key('6')
+                press_key('j')
+                
+                
 
 
 
         try:
             cv2.imshow('radar', np.array(radar))
             cv2.imshow('test', np.array(src))
+            cv2.imshow('Srodek', np.array(screen_center))
+            #cv2.imshow('Srodek2', np.array(orange))
+
             if cv2.waitKey(33) & 0xFF in (
                 ord('q'), 
                 27, 
             ):
                 break
         except:
-            pass
+            cv2.imshow('Srodek', np.array(screen_center))
+            #cv2.imshow('Srodek2', np.array(orange))
 
+            if cv2.waitKey(33) & 0xFF in (
+                ord('q'), 
+                27, 
+            ):
+                break
 
-def PressKey(hexKeyCode):
-    extra = ctypes.c_ulong(0)
-    ii_ = Input_I()
-    ii_.ki = KeyBdInput( 0, hexKeyCode, 0x0008, 0, ctypes.pointer(extra) )
-    x = Input( ctypes.c_ulong(1), ii_ )
-    ctypes.windll.user32.SendInput(1, ctypes.pointer(x), ctypes.sizeof(x))
-
-def ReleaseKey(hexKeyCode):
-    extra = ctypes.c_ulong(0)
-    ii_ = Input_I()
-    ii_.ki = KeyBdInput( 0, hexKeyCode, 0x0008 | 0x0002, 0, ctypes.pointer(extra) )
-    x = Input( ctypes.c_ulong(1), ii_ )
-    ctypes.windll.user32.SendInput(1, ctypes.pointer(x), ctypes.sizeof(x))
