@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from mss import mss
 from scipy import ndimage
-import statistics
+import pydirectinput
 
 mon = {'left': 860, 'top': 960, 'width': 220, 'height': 320}
 
@@ -59,8 +59,29 @@ with mss() as sct:
                     radar = cv2.resize(radar, (200,200), interpolation = cv2.INTER_AREA)
                 except:
                     pass
-                if counter%10==0:
-                    print(mass_center)
+                if counter%10==0: 
+                    #print(mass_center)
+                    if mass_center[0]<35:
+                        pydirectinput.keyDown('b')
+                        time.sleep(0.25)
+                        pydirectinput.keyUp('b')
+                        print("prawo")
+                    if mass_center[0]>45:
+                        pydirectinput.keyDown('k')
+                        time.sleep(0.25)
+                        pydirectinput.keyUp('k')
+                        print("lewo")
+                    if mass_center[1]<35:
+                        pydirectinput.keyDown('i')
+                        time.sleep(0.25)
+                        pydirectinput.keyUp('i')
+                        print("gora")
+                    if mass_center[1]>35:
+                        pydirectinput.keyDown('p')
+                        time.sleep(0.25)
+                        pydirectinput.keyUp('p')
+                        print("dol")
+
 
 
         try:
@@ -75,4 +96,16 @@ with mss() as sct:
             pass
 
 
+def PressKey(hexKeyCode):
+    extra = ctypes.c_ulong(0)
+    ii_ = Input_I()
+    ii_.ki = KeyBdInput( 0, hexKeyCode, 0x0008, 0, ctypes.pointer(extra) )
+    x = Input( ctypes.c_ulong(1), ii_ )
+    ctypes.windll.user32.SendInput(1, ctypes.pointer(x), ctypes.sizeof(x))
 
+def ReleaseKey(hexKeyCode):
+    extra = ctypes.c_ulong(0)
+    ii_ = Input_I()
+    ii_.ki = KeyBdInput( 0, hexKeyCode, 0x0008 | 0x0002, 0, ctypes.pointer(extra) )
+    x = Input( ctypes.c_ulong(1), ii_ )
+    ctypes.windll.user32.SendInput(1, ctypes.pointer(x), ctypes.sizeof(x))
