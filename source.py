@@ -91,38 +91,37 @@ with mss() as sct:
                         #print(orange_mass_center)
                         if mass_center[0]<35:
                             press_key('b')
-                            print("prawo")
+                            print("right")
                         if mass_center[0]>45:
                             press_key('k')
-                            print("lewo")
+                            print("left")
                         if mass_center[1]<35:
                             press_key('i')
-                            print("gora")
+                            print("up")
                         if mass_center[1]>35:
                             press_key('p')
-                            print("dol")
+                            print("down")
                         if 45>mass_center[0]>35 and 45>mass_center[1]>35:
-                            #print("Pozycja osiegnieta")
                             on_position = 1
-                            print("Namierzanie precyzyjne")
+                            print("Precise targeting")
 
         if on_position == 1 and precise_position == 0:
             precise_position_counter = precise_position_counter + 1
             if orange_mass_center[0]<634:
                 press_key('a')
-                print("lewo")
+                print("left")
                 precise_position_counter = 0
             if orange_mass_center[0]>704:
                 press_key('d')
-                print("prawo")
+                print("right")
                 precise_position_counter = 0
             if orange_mass_center[1]<274:
                 press_key('i')
-                print("gora")
+                print("up")
                 precise_position_counter = 0
             if orange_mass_center[1]>377:
                 press_key('p')
-                print("dol")
+                print("down")
                 precise_position_counter = 0
             if precise_position_counter == 50:
                 precise_position = 1
@@ -136,9 +135,8 @@ with mss() as sct:
 
         try:
             cv2.imshow('radar', np.array(radar))
-            cv2.imshow('test', np.array(src))
-            cv2.imshow('Srodek', np.array(screen_center))
-            #cv2.imshow('Srodek2', np.array(orange))
+            cv2.imshow('detect radar', np.array(src))
+            cv2.imshow('center', np.array(screen_center))
 
             if cv2.waitKey(33) & 0xFF in (
                 ord('q'), 
@@ -147,7 +145,6 @@ with mss() as sct:
                 break
         except:
             cv2.imshow('Srodek', np.array(screen_center))
-            #cv2.imshow('Srodek2', np.array(orange))
 
             if cv2.waitKey(33) & 0xFF in (
                 ord('q'), 
